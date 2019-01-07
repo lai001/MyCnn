@@ -15,12 +15,10 @@ CONV3_SIZE = 3
 FC_SIZE = 512
 # 图像尺寸大小
 IMAGE_SIZE = {"w": 64, "h": 64}
-# 训练次数
-STEPS = 10
-# 一次训练的个数
-batch_size = 10
+
+
 x_data = tf.placeholder(tf.float32, shape=[None, IMAGE_SIZE["w"], IMAGE_SIZE["h"], CHANNELS])
-y_data = tf.placeholder(tf.float32, shape=[None, None])
+y_data = tf.placeholder(tf.float32, shape=[None])
 
 keep_prob_5 = tf.placeholder(tf.float32)
 keep_prob_75 = tf.placeholder(tf.float32)
