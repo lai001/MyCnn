@@ -3,22 +3,22 @@ import tensorflow as tf
 # 通道
 CHANNELS = 3
 # 第一层卷积层的尺寸和深度
-CONV1_DEEP = 32
+CONV1_DEEP = 16
 CONV1_SIZE = 3
 # 第二层卷积层的尺寸和深度
-CONV2_DEEP = 64
+CONV2_DEEP = 32
 CONV2_SIZE = 3
 # 第三层卷积层的尺寸和深度
-CONV3_DEEP = 64
+CONV3_DEEP = 32
 CONV3_SIZE = 3
 # 全连接层的节点个数
 FC_SIZE = 512
 # 图像尺寸大小
-IMAGE_SIZE = {"w": 64, "h": 64}
+IMAGE_SIZE = {"w": 32, "h": 32}
 
 
 x_data = tf.placeholder(tf.float32, shape=[None, IMAGE_SIZE["w"], IMAGE_SIZE["h"], CHANNELS])
-y_data = tf.placeholder(tf.float32, shape=[None])
+y_data = tf.placeholder(tf.float32, shape=[None,None])
 
 keep_prob_5 = tf.placeholder(tf.float32)
 keep_prob_75 = tf.placeholder(tf.float32)
@@ -54,7 +54,7 @@ def dropout(x, keep):
 
 
 # 定义卷积神经网络的向前传播过程
-def cnnLayer(classnum):
+def cnnLayer(face_type_amount):
     # 第一层卷积层的尺寸为3*3 ，输入的颜色通道为3 ，深度为32
     W1 = weightVariable([CONV1_SIZE, CONV1_SIZE, CHANNELS, CONV1_DEEP])  # 过滤器权重变量
     b1 = biasVariable([CONV1_DEEP])  # 偏置项
@@ -91,8 +91,8 @@ def cnnLayer(classnum):
     dropfc = dropout(fc, keep_prob_75)  # 避免过拟合，随机让某些权重不更新
 
     # 输出层
-    Wout = weightVariable([FC_SIZE, classnum])  # 这一层的输入为一组长度为512的向量，输出一组长度为classnum的向量
-    bout = weightVariable([classnum])  # 偏置项
+    Wout = weightVariable([FC_SIZE, face_type_amount])  # 这一层的输入为一组长度为512的向量，输出一组长度为face_type_amount的向量
+    bout = weightVariable([face_type_amount])  # 偏置项
     # out = tf.matmul(dropf, Wout) + bout
     out = tf.add(tf.matmul(dropfc, Wout), bout)  # 输出层的向前传播过程
 

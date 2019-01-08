@@ -18,18 +18,20 @@ def generate_tfrecords_file():
     for index, face_dir in enumerate(os.listdir(face_root_dir_path)):
 
         label = int(face_dir)
-        print(label)
-        for root, _, files in os.walk(os.path.join(face_root_dir_path, face_dir)):
-            os.chdir(root)
 
+        for root, _, files in os.walk(os.path.join(face_root_dir_path, face_dir)):
+
+            # print(os.path.join(face_root_dir_path, face_dir))
             for file in files:
-                img = Image.open(file)
-                img = img.resize((64, 64))
+                print(face_dir)
+                img = Image.open(os.path.join(face_root_dir_path,face_dir)+f"/{file}")
+                img = img.resize((32, 32))
                 img_raw = img.tobytes()  # 将图片转化为原生bytes
                 example = tf.train.Example(features=tf.train.Features(feature={
                     "label": tf.train.Feature(int64_list=tf.train.Int64List(value=[label])),
                     'img_raw': tf.train.Feature(bytes_list=tf.train.BytesList(value=[img_raw]))
                 }))
+
                 writer.write(example.SerializeToString())  # 序列化为字符串
     writer.close()
 
@@ -50,7 +52,7 @@ def read_tfrecords_file(filename: str, num_epochs: int) -> (tf.Tensor, tf.Tensor
                                        })
 
     img = tf.decode_raw(features['img_raw'], tf.uint8)
-    img = tf.reshape(img, [64, 64, 3])
+    img = tf.reshape(img, [32, 32, 3])
     img = tf.cast(img, tf.float32) * (1. / 255) - 0.5
     label = tf.cast(features['label'], tf.int32)
     image_batch, label_batch = tf.train.shuffle_batch([img, label],
@@ -62,7 +64,7 @@ def read_tfrecords_file(filename: str, num_epochs: int) -> (tf.Tensor, tf.Tensor
 def generate_coordinator_data_labels(file_path: str, num_epochs: int) -> (
         tf.Session, tf.train.Coordinator, tf.Tensor, tf.Tensor):
     image_batch, label_batch = read_tfrecords_file(file_path, num_epochs)  # type: (tf.Tensor, tf.Tensor)
-    sess = gpu_growth_session()
+    sess = tf.Session()
     sess.run(tf.global_variables_initializer())
     sess.run(tf.local_variables_initializer())
     coord = tf.train.Coordinator()
