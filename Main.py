@@ -1,4 +1,5 @@
 from CNN_Model import *
+from CNN import *
 import pre_process_raw_data
 import os
 from Parameter import *
@@ -19,10 +20,11 @@ def start_train():
 
             labels_value = tf.reshape(labels_value, [batch_size_value, 10])
             labels_value = sess.run(labels_value)
+            # print(img_batch_value.shape)
+            # print(labels_value.shape)
             _, loss_value, steps = sess.run([train, loss, global_steps],
-                                            feed_dict={x_data: img_batch_value, y_data: labels_value,
-                                                       keep_prob_5: keep_prob_5_value,
-                                                       keep_prob_75: keep_prob_75_value})
+                                            feed_dict={x_data: img_batch_value, y_data: labels_value
+                                                      })
             if steps % 10 == 0:
                 print(f'损失值为{loss_value}')
 
@@ -40,12 +42,17 @@ def start_train():
 
 if __name__ == '__main__':
 
-    face_type_num = len(os.listdir(face_root_dir_path))
+    labels_num = len(os.listdir(face_root_dir_path))
     global_steps = tf.Variable(0, trainable=False, name="global_steps")
-    output = cnnLayer(face_type_num)
+    output = model(labels_num)
+    learning_rate = tf.train.exponential_decay(base_learning_rate, global_steps, 100, 0.99)
 
-    loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=output, labels=y_data))
-    train = tf.train.GradientDescentOptimizer(base_learning_rate).minimize(loss, global_step=global_steps)
+    cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=output, labels=tf.arg_max(y_data, 1))
+    loss = tf.reduce_mean(cross_entropy)
+
+    # loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=output, labels=y_data))
+
+    train = tf.train.GradientDescentOptimizer(learning_rate).minimize(loss, global_step=global_steps)
     saver = tf.train.Saver(max_to_keep=saver_max_to_keep)
 
     sess, coord, img_batch, labels = pre_process_raw_data.generate_coordinator_data_labels(
@@ -66,14 +73,12 @@ if __name__ == '__main__':
 
         elif op is '2':
 
-            image_raw = tf.gfile.FastGFile('Face/0/30.png', 'rb').read()
+            image_raw = tf.gfile.FastGFile(r'Face/3/17.png', 'rb').read()
 
             img = tf.image.decode_jpeg(image_raw)  # type: tf.Tensor
             img1 = tf.image.resize_images(sess.run(img), [32, 32], method=0)
             x = np.array([sess.run(img1)], dtype=np.float32)
-            probability = sess.run(output, feed_dict={x_data: x,
-                                                      keep_prob_5: keep_prob_5_value,
-                                                      keep_prob_75: keep_prob_75_value})  # type: np.ndarray
+            probability = sess.run(output, feed_dict={x_data: x})  # type: np.ndarray
             print(f"概率为{probability}")
 
             softmax_value = sess.run(tf.nn.softmax(probability))
